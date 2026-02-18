@@ -171,6 +171,94 @@ local function ResetTimer()
     UpdateTimerDisplay()
 end
 
+local shareMessages = {
+    "Je level depuis %s... C'est plus long que le générique du Seigneur des Anneaux!",
+    "Ça fait %s que je suis sur ce perso. Leroy Jenkins aurait déjà ragequit.",
+    "%s de leveling. À ce rythme, Blizzard va sortir WoW 2 avant que je finisse.",
+    "Timer: %s. J'ai commencé jeune et frais, maintenant j'ai la barbe de Khadgar.",
+    "%s et toujours pas cap. Même un murloc irait plus vite. MRGLGLGL!",
+    "Ça fait %s que je level. J'ai vu des raid teams se former, wipe, et disband.",
+    "%s sur ce perso. Mon /played me regarde avec déception.",
+    "%s de grind. Les pandas de MoP sont devenus des papys pandas.",
+    "%s et je level encore. Pendant ce temps, Onyxia a eu le temps de respawner 3 fois.",
+    "Timer: %s. Mon perso a vu plus de contenu que la plupart des devs du jeu.",
+    "%s de leveling. C'est plus long qu'une file d'attente LFR un mardi.",
+    "Ça fait %s que je suis là. Même Illidan était pas prepared pour ça.",
+    "%s sur le timer. À ce stade, ma mount a plus de kilomètres que ma voiture.",
+}
+
+local function GetRandomShareMessage()
+    local elapsed = GetElapsedTime()
+    if not elapsed then
+        return "Mon timer RushHour n'a pas encore démarré!"
+    end
+    local timeStr = FormatTime(elapsed)
+    local msg = shareMessages[math.random(#shareMessages)]
+    return string.format(msg, timeStr)
+end
+
+local function SendShareMessage(channel, target)
+    local msg = GetRandomShareMessage()
+    if channel == "WHISPER" and target then
+        SendChatMessage(msg, channel, nil, target)
+    elseif channel == "GUILD" or channel == "PARTY" or channel == "RAID" or channel == "SAY" then
+        SendChatMessage(msg, channel)
+    elseif channel == "COMMUNITY" then
+        Print("Communauté: " .. msg)
+    end
+end
+
+local function ShowShareDropdown(parentBtn)
+    MenuUtil.CreateContextMenu(parentBtn, function(ownerRegion, rootDescription)
+        rootDescription:CreateTitle("Partager")
+
+        if IsInGuild() then
+            rootDescription:CreateButton("Guilde", function()
+                SendShareMessage("GUILD")
+            end)
+        end
+
+        rootDescription:CreateButton("Dire", function()
+            SendShareMessage("SAY")
+        end)
+
+        if IsInGroup() then
+            local channel = IsInRaid() and "RAID" or "PARTY"
+            rootDescription:CreateButton("Groupe", function()
+                SendShareMessage(channel)
+            end)
+        end
+
+        rootDescription:CreateButton("Chuchoter", function()
+            StaticPopup_Show("RUSHHOUR_WHISPER_TARGET")
+        end)
+    end)
+end
+
+StaticPopupDialogs["RUSHHOUR_WHISPER_TARGET"] = {
+    text = "Nom du joueur:",
+    button1 = "Envoyer",
+    button2 = "Annuler",
+    hasEditBox = true,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    OnAccept = function(self)
+        local target = self.editBox:GetText()
+        if target and target ~= "" then
+            SendShareMessage("WHISPER", target)
+        end
+    end,
+    EditBoxOnEnterPressed = function(self)
+        local parent = self:GetParent()
+        local target = parent.editBox:GetText()
+        if target and target ~= "" then
+            SendShareMessage("WHISPER", target)
+        end
+        parent:Hide()
+    end,
+}
+
 local function SetMode(mode)
     if RushHourDB.isRunning then
         Print("Impossible de changer de mode pendant un timer!")
@@ -333,10 +421,17 @@ local function CreateConfigFrame()
 
     local resetBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     resetBtn:SetSize(80, 25)
-    resetBtn:SetPoint("BOTTOM", frame, "BOTTOM", 0, 15)
+    resetBtn:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 15, 15)
     resetBtn:SetText("Reset")
     resetBtn:SetScript("OnClick", ResetTimer)
     tinsert(frame.fullViewElements, resetBtn)
+
+    local shareBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    shareBtn:SetSize(80, 25)
+    shareBtn:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -15, 15)
+    shareBtn:SetText("Partager")
+    shareBtn:SetScript("OnClick", function(self) ShowShareDropdown(self) end)
+    tinsert(frame.fullViewElements, shareBtn)
 
     local elapsed = 0
     frame:SetScript("OnUpdate", function(self, delta)
