@@ -1,0 +1,8 @@
+## Interface: 120000, 120001
+## Title: RushHour
+## Notes: Real-time leveling timer - tracks wall clock time to reach level 90
+## Author: Florian
+## Version: 1.0.0
+## SavedVariables: RushHourDB
+
+RushHour.lua
