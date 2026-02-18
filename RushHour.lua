@@ -189,12 +189,12 @@ local function SetMinimized(minimized)
     if minimized then
         RushHourFrame:SetSize(180, 70)
         RushHourFrame.timerText:ClearAllPoints()
-        RushHourFrame.timerText:SetPoint("CENTER", RushHourFrame, "CENTER", 0, -5)
+        RushHourFrame.timerText:SetPoint("CENTER", RushHourFrame, "CENTER", 0, 0)
 
         for _, element in ipairs(RushHourFrame.fullViewElements) do
             element:Hide()
         end
-        RushHourFrame.minimizeBtn.text:SetText("+")
+        RushHourFrame.minimizeBtn:SetText("+")
     else
         RushHourFrame:SetSize(280, 230)
         RushHourFrame.timerText:ClearAllPoints()
@@ -203,7 +203,7 @@ local function SetMinimized(minimized)
         for _, element in ipairs(RushHourFrame.fullViewElements) do
             element:Show()
         end
-        RushHourFrame.minimizeBtn.text:SetText("-")
+        RushHourFrame.minimizeBtn:SetText("—")
     end
 end
 
@@ -233,16 +233,11 @@ local function CreateConfigFrame()
     frame.title:SetPoint("TOPLEFT", frame.TitleBg, "TOPLEFT", 5, -3)
     frame.title:SetText("RushHour")
 
-    local minimizeBtn = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    minimizeBtn:SetSize(24, 24)
-    minimizeBtn:SetPoint("RIGHT", frame.CloseButton, "LEFT", 4, 0)
+    local minimizeBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    minimizeBtn:SetSize(25, 23)
+    minimizeBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -20, 0)
+    minimizeBtn:SetText("—")
     minimizeBtn:SetScript("OnClick", ToggleMinimize)
-    minimizeBtn:GetNormalTexture():SetAlpha(0)
-    minimizeBtn:GetPushedTexture():SetAlpha(0)
-    local minText = minimizeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    minText:SetPoint("CENTER", 0, 0)
-    minText:SetText("-")
-    minimizeBtn.text = minText
     frame.minimizeBtn = minimizeBtn
 
     frame.fullViewElements = {}
