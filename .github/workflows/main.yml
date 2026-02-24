@@ -16,3 +16,4 @@ jobs:
         uses: BigWigsMods/packager@master
         env:
           CF_API_KEY: ${{ secrets.CF_API_TOKEN }}
+          CURSE_PROJECT_ID: ${{ secrets.CF_PROJECT_ID }}
