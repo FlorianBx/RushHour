@@ -1,8 +1,9 @@
 local ADDON_NAME = "RushHour"
 local DEFAULT_TARGET_LEVEL = 90
+local LEVEL_UP_SOUND_ID = 888
 
 local defaults = {
-    triggerQuestID = nil,
+    triggerQuestID = 91281,
     elapsedTime = 0,
     sessionStart = nil,
     hardcoreStartTime = nil,
@@ -15,6 +16,7 @@ local defaults = {
 }
 
 local RushHourFrame = nil
+local ShowConfigFrame
 
 local function FormatTime(seconds)
     if not seconds or seconds < 0 then
@@ -115,6 +117,7 @@ local function CheckLevelReached()
         Print("Félicitations! Niveau " .. RushHourDB.targetLevel .. " atteint!")
         Print("Temps total: " .. FormatTime(elapsed))
         UpdateTimerDisplay()
+        ShowConfigFrame()
         return true
     end
     return false
@@ -256,6 +259,25 @@ StaticPopupDialogs["RUSHHOUR_WHISPER_TARGET"] = {
             SendShareMessage("WHISPER", target)
         end
         parent:Hide()
+    end,
+}
+
+StaticPopupDialogs["RUSHHOUR_MODE_SELECT"] = {
+    text = "Choose mode (last: %s):",
+    button1 = "Casu",
+    button2 = "Hardcore",
+    timeout = 0,
+    whileDead = false,
+    hideOnEscape = false,
+    OnAccept = function()
+        RushHourDB.mode = "casu"
+        UpdateModeButtons()
+        StartTimer(true)
+    end,
+    OnCancel = function()
+        RushHourDB.mode = "hardcore"
+        UpdateModeButtons()
+        StartTimer(true)
     end,
 }
 
@@ -419,13 +441,6 @@ local function CreateConfigFrame()
     timerText:SetText("Timer: --")
     frame.timerText = timerText
 
-    local resetBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    resetBtn:SetSize(80, 25)
-    resetBtn:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 15, 15)
-    resetBtn:SetText("Reset")
-    resetBtn:SetScript("OnClick", ResetTimer)
-    tinsert(frame.fullViewElements, resetBtn)
-
     local shareBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     shareBtn:SetSize(80, 25)
     shareBtn:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -15, 15)
@@ -449,28 +464,31 @@ local function CreateConfigFrame()
     return frame
 end
 
+ShowConfigFrame = function()
+    local frame = CreateConfigFrame()
+    if frame:IsShown() then return end
+
+    frame.questInput:SetText(tostring(RushHourDB.triggerQuestID))
+    frame.levelInput:SetText(tostring(RushHourDB.targetLevel))
+
+    if RushHourDB.framePosition then
+        frame:ClearAllPoints()
+        frame:SetPoint("CENTER", UIParent, "CENTER", RushHourDB.framePosition.x, RushHourDB.framePosition.y)
+    end
+
+    UpdateModeButtons()
+    UpdateTimerDisplay()
+    SetMinimized(RushHourDB.isMinimized)
+    frame:Show()
+end
+
 local function ToggleConfigFrame()
     local frame = CreateConfigFrame()
 
     if frame:IsShown() then
         frame:Hide()
     else
-        if RushHourDB.triggerQuestID then
-            frame.questInput:SetText(tostring(RushHourDB.triggerQuestID))
-        else
-            frame.questInput:SetText("")
-        end
-        frame.levelInput:SetText(tostring(RushHourDB.targetLevel))
-
-        if RushHourDB.framePosition then
-            frame:ClearAllPoints()
-            frame:SetPoint("CENTER", UIParent, "CENTER", RushHourDB.framePosition.x, RushHourDB.framePosition.y)
-        end
-
-        UpdateModeButtons()
-        UpdateTimerDisplay()
-        SetMinimized(RushHourDB.isMinimized)
-        frame:Show()
+        ShowConfigFrame()
     end
 end
 
@@ -513,10 +531,17 @@ frame:SetScript("OnEvent", function(self, event, ...)
     elseif event == "QUEST_ACCEPTED" then
         local questID = ...
         if RushHourDB.triggerQuestID and questID == RushHourDB.triggerQuestID then
-            StartTimer(true)
+            local lastMode = RushHourDB.mode == "hardcore" and "Hardcore" or "Casu"
+            StaticPopup_Show("RUSHHOUR_MODE_SELECT", lastMode)
         end
 
     elseif event == "PLAYER_LEVEL_UP" then
+        local newLevel = ...
+        if RushHourDB.isRunning then
+            local elapsed = GetElapsedTime()
+            Print("Level " .. newLevel .. "! " .. (elapsed and FormatTime(elapsed) or "--"))
+            PlaySound(LEVEL_UP_SOUND_ID)
+        end
         CheckLevelReached()
 
     elseif event == "PLAYER_LOGOUT" then
