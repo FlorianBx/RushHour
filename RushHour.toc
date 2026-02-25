@@ -2,7 +2,8 @@
 ## Title: RushHour
 ## Notes: Real-time leveling timer - tracks wall clock time to reach level 90
 ## Author: Florian
-## Version: 1.1.4
+## Version: 1.1.5
+## X-Curse-Project-ID: 1467504
 ## SavedVariables: RushHourDB
 
 RushHour.lua
