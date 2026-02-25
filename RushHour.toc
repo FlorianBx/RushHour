@@ -4,6 +4,6 @@
 ## Author: Florian
 ## Version: 1.1.5
 ## X-Curse-Project-ID: 1467504
-## SavedVariables: RushHourDB
+## SavedVariablesPerCharacter: RushHourDB
 
 RushHour.lua
